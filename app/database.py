@@ -1,15 +1,14 @@
+# app/database.py
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
+from pathlib import Path
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./inspeksi.db"
+BASE_DIR = Path(__file__).resolve().parent.parent  # -> project root (…/BIB)
+DB_PATH = BASE_DIR / "inspeksi.db"
 
+SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
 )
-
-# Tambahkan ini untuk SessionLocal
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 Base = declarative_base()

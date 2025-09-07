@@ -1,0 +1,81 @@
+<!-- app/templates/dashboard.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Dashboard - Hang Nadim</title>
+  <link rel="icon" href="/static/logo-hangnadim.webp">
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      margin:0; padding:0; min-height:100vh;
+      display:flex; align-items:center; justify-content:center;
+      background-image:url('/static/airport-background.png');
+      background-size:cover; background-position:center;
+    }
+    .wrap{
+      width:min(960px,95vw);
+      background: linear-gradient(135deg,
+        rgba(0,114,188,0.9),
+        rgba(242,101,34,0.9),
+        rgba(139,197,63,0.9));
+      color:#fff; border-radius:12px;
+      box-shadow:0 6px 20px rgba(0,0,0,.25);
+      padding:24px 28px;
+    }
+    .top{
+      display:flex; align-items:center; gap:16px; margin-bottom:16px;
+    }
+    .top img{ height:54px }
+    h1{ margin:0; font-size:22px }
+    .grid{
+      display:grid; gap:12px; grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+      margin-top:12px;
+    }
+    .card{
+      background:rgba(255,255,255,.12); padding:14px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.2);
+    }
+    a.btn{
+      display:inline-block; margin-top:10px; padding:10px 14px; border-radius:6px;
+      text-decoration:none; font-weight:bold; color:#fff; background:#F26522;
+    }
+    a.btn:hover{ background:#8BC53F; }
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:16px }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <img src="/static/logo-hangnadim.webp" alt="Hang Nadim">
+      <div>
+        <h1>Dashboard Inspeksi</h1>
+        <div>Selamat datang 👋</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Form Inspeksi</h3>
+        <p>Buka form pemeriksaan fasilitas terminal.</p>
+        <a class="btn" href="/inspection-form">Mulai Inspeksi</a>
+      </div>
+      <div class="card">
+        <h3>Ringkasan</h3>
+        <p>Lihat ringkasan hasil inspeksi.</p>
+        <a class="btn" href="/api/dashboard/summary" target="_blank">Lihat JSON</a>
+      </div>
+      <div class="card">
+        <h3>Manajemen User</h3>
+        <p>Tambah petugas / setel role.</p>
+        <a class="btn" href="#" onclick="alert('Coming soon');return false;">Kelola</a>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a class="btn" href="/logout">Keluar</a>
+    </div>
+  </div>
+</body>
+</html>

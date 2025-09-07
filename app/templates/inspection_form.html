@@ -1,14 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Form Inspeksi</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Form Inspeksi - Hang Nadim{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h2>Form Inspeksi</h2>
+
     <form id="inspectionForm">
-        <input type="hidden" id="lat">
-        <input type="hidden" id="lon">
-        <!-- Form dinamis akan diisi oleh JavaScript -->
+      <!-- Terminal -->
+      <div class="row">
+        <label for="terminal">Terminal</label>
+        <select id="terminal" required></select>
+        <div class="note">Pilih lokasi inspeksi.</div>
+      </div>
+
+      <!-- Geolokasi -->
+      <input type="hidden" id="lat" name="lat">
+      <input type="hidden" id="lon" name="lon">
+      <div class="row actions">
+        <button type="button" class="btn" id="btnGeo">Ambil Lokasi</button>
+        <span class="note" id="geoNote">Lokasi belum diambil.</span>
+      </div>
+
+      <!-- Form dinamis -->
+      <div id="formArea"></div>
+
+      <div class="row actions">
+        <button type="submit" class="btn">Kirim Inspeksi</button>
+        <span id="status" class="status"></span>
+      </div>
     </form>
-    <script src="/static/app.js"></script>
-</body>
-</html>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="/static/app.js"></script>
+{% endblock %}

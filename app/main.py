@@ -1,108 +1,112 @@
-from fastapi import FastAPI, Request, Depends, Form, HTTPException
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
-from app.database import engine, SessionLocal
-from app import models
-from sqlalchemy.orm import Session
-import os
-from passlib.context import CryptContext
+# app/main.py
 from datetime import datetime, timedelta
-from jose import JWTError, jwt
+from pathlib import Path
+from typing import Optional
 
-# Konfigurasi
-SECRET_KEY = "your-secret-key-here"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+from fastapi import FastAPI, Request, Depends, Form, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, RedirectResponse
+from jose import jwt
+from passlib.context import CryptContext
+from sqlalchemy.orm import Session
 
-# Buat folder jika belum ada
-os.makedirs("static", exist_ok=True)
-os.makedirs("app/templates", exist_ok=True)
+from .database import Base, engine, SessionLocal
+from . import models
+from .routers import auth, dashboard, inspections, terminals, admin
+from .settings import BASE_DIR, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, templates
+from .deps import get_db, get_current_user  # <- pakai dari deps
 
-# Inisialisasi database
-models.Base.metadata.create_all(bind=engine)
+app = FastAPI(title="BIB")
 
-app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Setup password hashing
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-templates = Jinja2Templates(directory="app/templates")
-
-# Dependency untuk database
-def get_db():
+@app.on_event("startup")
+def on_startup():
+    Base.metadata.create_all(bind=engine)
+    # superuser default
     db = SessionLocal()
     try:
-        yield db
+        default_username = "admin"
+        default_password = "Admin123!"
+        default_role = "superadmin"
+        user = db.query(models.User).filter(models.User.username == default_username).first()
+        if not user:
+            hashed = pwd_context.hash(default_password)
+            db.add(models.User(username=default_username, password=hashed, role=default_role))
+            db.commit()
+            print(f"[INFO] Default superuser '{default_username}' dibuat.")
+        else:
+            print(f"[INFO] Default superuser '{default_username}' sudah ada.")
     finally:
         db.close()
 
-# Fungsi pembantu
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
 
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-def create_access_token(data: dict, expires_delta: timedelta = None):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-# Route untuk halaman login
-@app.get("/", response_class=HTMLResponse)
-async def login_page(request: Request):
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
-# Route untuk proses login
-@app.post("/login")
-async def handle_login(
+@app.post("/login", response_class=HTMLResponse, include_in_schema=False)
+def handle_login(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    # Cari user di database
     user = db.query(models.User).filter(models.User.username == username).first()
-    
     if not user or not verify_password(password, user.password):
-        # Tampilkan pesan error di template
-        return templates.TemplateResponse("login.html", {
-            "request": request,
-            "error": "Username atau password salah"
-        }, status_code=400)
-    
-    # Buat token JWT
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username},
-        expires_delta=access_token_expires
-    )
-    
-    # Redirect ke dashboard dengan token
-    response = RedirectResponse(url="/dashboard", status_code=303)
-    response.set_cookie(key="access_token", value=f"Bearer {access_token}", httponly=True)
-    return response
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": "Username atau password salah"},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
-# Route untuk dashboard (contoh)
-@app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request):
-    # Di sini Anda bisa menambahkan verifikasi token
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    token = create_access_token(data={"sub": user.username, "role": user.role}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    resp = RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+    resp.set_cookie("access_token", f"Bearer {token}", httponly=True, samesite="lax", max_age=ACCESS_TOKEN_EXPIRE_MINUTES*60)
+    return resp
 
-# Error handler
+@app.get("/logout", include_in_schema=False)
+def logout():
+    resp = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    resp.delete_cookie("access_token")
+    return resp
+
+@app.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
+def dashboard_page(request: Request, current_user: models.User = Depends(get_current_user)):
+    return templates.TemplateResponse("dashboard.html", {"request": request, "username": current_user.username, "role": current_user.role})
+@app.get("/inspection-form", response_class=HTMLResponse, include_in_schema=False)
+def inspection_form_page(request: Request, current_user: models.User = Depends(get_current_user)):
+    # kalau mau public, hapus parameter current_user + Depends
+    return templates.TemplateResponse("inspection_form.html", {"request": request})
+# Routers
+app.include_router(auth.router,        prefix="/api", tags=["auth"])
+app.include_router(dashboard.router,   prefix="/api", tags=["dashboard"])
+app.include_router(inspections.router, prefix="/api", tags=["inspections"])
+app.include_router(terminals.router,   prefix="/api", tags=["terminals"])
+app.include_router(admin.router,       prefix="/api", tags=["admin"])        # API admin
+app.include_router(admin.router,                     tags=["admin pages"])   # halaman /admin/import
+
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
-    return templates.TemplateResponse(
-        "error.html",
-        {"request": request, "error": exc.detail},
-        status_code=exc.status_code
-    )
+def http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == status.HTTP_303_SEE_OTHER:
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse("error.html", {"request": request, "error": exc.detail}, status_code=exc.status_code)

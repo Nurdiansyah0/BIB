@@ -1,116 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <title>Login - Bandara Internasional Hang Nadim</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f0f8ff;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-image: url('airport-background.jpg');
-            background-size: cover;
-            background-position: center;
-        }
-        
-        .login-container {
-            background-color: rgba(13, 177, 177, 0.9);
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            width: 350px;
-            text-align: center;
-        }
-        
-        .logo {
-            margin-bottom: 25px;
-        }
-        
-        .logo img {
-            max-width: 200px;
-            height: auto;
-        }
-        
-        h2 {
-            color: #0056b3;
-            margin-bottom: 20px;
-        }
-        
-        .input-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #333;
-            font-weight: bold;
-        }
-        
-        input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-        
-        button {
-            background-color: #0056b3;
-            color: rgba(17, 161, 152, 0.674);
-            border: none;
-            padding: 12px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-        
-        button:hover {
-            background-color: #003d82;
-        }
-        
-        .footer {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #666;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Bandara Internasional Hang Nadim</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f8ff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-image: url('/static/airport-background.png');
+      background-size: cover;
+      background-position: center;
+    }
+    .login-container {
+      background: linear-gradient(135deg,
+        rgba(0,114,188,0.9),
+        rgba(242,101,34,0.9),
+        rgba(139,197,63,0.9)
+      );
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+      padding: 30px;
+      width: 350px;
+      text-align: center;
+      color: #fff;
+    }
+    .logo { margin-bottom: 25px; }
+    .logo img { max-width: 200px; height: auto; }
+
+    h2 { color:#fff; margin-bottom:20px; }
+    .input-group { margin-bottom:20px; text-align:left; }
+    label { display:block; margin-bottom:5px; color:#fff; font-weight:bold; }
+    input, select {
+      width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;
+    }
+    button {
+      background-color:#F26522; color:#fff;
+      border:none; padding:12px 20px; border-radius:5px; cursor:pointer;
+      width:100%; font-size:16px; font-weight:bold; transition:background-color .3s;
+    }
+    button:hover { background-color:#8BC53F; }
+
+    .footer { margin-top:20px; font-size:12px; color:#eee; }
+
+    /* Eye button */
+    .pwd-wrap { position:relative; }
+    .pwd-wrap input { padding-right:42px; }
+    .pwd-eye {
+      position:absolute; right:8px; top:50%; transform:translateY(-50%);
+      background:transparent; border:0; cursor:pointer; padding:4px;
+      width:auto; line-height:0; color:#444;
+    }
+    .pwd-eye svg { display:block; }
+
+    .forgot-link {
+      display:inline-block; margin-top:6px; font-size:12px; color:#fff; text-decoration:underline;
+    }
+
+    /* Modal register */
+    #register-modal {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+      align-items:center; justify-content:center; z-index:9999;
+    }
+    #register-modal .box {
+      background:#fff; color:#333; padding:20px; border-radius:8px; width:320px;
+      box-shadow:0 8px 24px rgba(0,0,0,.2);
+    }
+    #register-modal .box h3 { margin-top:0; }
+    #register-modal .box .input-group label { color:#333; }
+    #register-modal .box input, #register-modal .box select {
+      width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;
+    }
+    #do-register { background:#F26522; color:#fff; margin-top:10px; }
+    #close-register { margin-top:8px; width:100%; }
+    #reg-msg { font-size:12px; color:#0072BC; }
+
+    /* Eye toggle state */
+    .pwd-eye .icon-open { display:none; }
+    .pwd-eye[aria-pressed="true"] .icon-closed { display:none; }
+    .pwd-eye[aria-pressed="true"] .icon-open { display:inline; }
+
+    /* Animasi kelopak */
+    .pwd-eye .icon-open .eyelid {
+      transform-origin: 50% 50%;
+      transform: scaleY(1);
+      transition: transform .22s ease;
+    }
+    .pwd-eye[aria-pressed="true"] .icon-open .eyelid {
+      transform: scaleY(0);
+    }
+
+    .pwd-eye svg { transition: opacity .18s ease; }
+  </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="logo">
-            <img src="/static/images/logo-hangnadim.webp" alt="Bandara Internasional Hang Nadim">
-        </div>
-        
-        <h2>Login ke Sistem</h2>
-        
-        <form>
-            <div class="input-group">
-                <label for="username">NIP</label>
-                <input type="text" id="username" placeholder="Masukkan username Anda" required>
-            </div>
-            
-            <div class="input-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Masukkan password Anda" required>
-            </div>
-            
-            <button type="submit">MASUK</button>
-        </form>
-        
-        <div class="footer">
-            © 2023 Bandara Internasional Hang Nadim. All rights reserved.
-        </div>
+  <div class="login-container">
+    <div class="logo">
+      <img src="/static/logo-hangnadim.webp" alt="Bandara Internasional Hang Nadim">
     </div>
+
+    <h2>Login ke Sistem</h2>
+
+    <form id="login-form" action="/login" method="POST" autocomplete="on">
+      <div class="input-group">
+        <label for="username">NIP</label>
+        <input type="text" id="username" name="username" placeholder="Masukkan NIP Anda" required autocomplete="username" />
+      </div>
+
+      <div class="input-group">
+        <label for="password">Password</label>
+        <div class="pwd-wrap">
+          <input type="password" id="password" name="password" placeholder="Masukkan password Anda" required autocomplete="current-password" />
+          <button type="button" class="pwd-eye" aria-label="Tampilkan/sembunyikan password"
+                  data-target="password" title="Tampilkan" aria-pressed="false">
+            <!-- Eye CLOSED -->
+            <svg class="icon-closed" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"
+                    stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="12" r="3" fill="currentColor"/>
+              <path d="M4 4 L20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <!-- Eye OPEN -->
+            <svg class="icon-open" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"
+                    stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+              <rect class="eyelid" x="2" y="3" width="20" height="18" rx="9" fill="currentColor" opacity="0.0"/>
+            </svg>
+          </button>
+        </div>
+        <a id="forgot-link" href="#" class="forgot-link">Lupa sandi?</a>
+      </div>
+
+      <button type="submit">MASUK</button>
+      <button type="button" id="open-register" style="margin-top:10px;background:#0072BC;color:#fff">DAFTAR</button>
+    </form>
+
+    <div class="footer">
+      © 2023 Bandara Internasional Hang Nadim. All rights reserved.
+    </div>
+  </div>
+
+  <!-- modal registrasi -->
+  <div id="register-modal">
+    <div class="box">
+      <h3>Buat Akun Baru</h3>
+
+      <div class="input-group">
+        <label for="reg-username">Username/NIP</label>
+        <input type="text" id="reg-username" required autocomplete="username"/>
+      </div>
+
+      <div class="input-group">
+        <label for="reg-password">Password</label>
+        <div class="pwd-wrap">
+          <input type="password" id="reg-password" required autocomplete="new-password"/>
+          <button type="button" class="pwd-eye" aria-label="Tampilkan/sembunyikan password"
+                  data-target="reg-password" title="Tampilkan" aria-pressed="false">
+            <!-- Eye CLOSED -->
+            <svg class="icon-closed" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"
+                    stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="12" r="3" fill="currentColor"/>
+              <path d="M4 4 L20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <!-- Eye OPEN -->
+            <svg class="icon-open" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"
+                    stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+              <rect class="eyelid" x="2" y="3" width="20" height="18" rx="9" fill="currentColor" opacity="0.0"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="reg-role">Role</label>
+        <select id="reg-role">
+          <option value="officer">Officer</option>
+          <option value="squad_leader">Squad Leader</option>
+          <option value="team_leader">Team Leader</option>
+          <option value="manager">Manager</option>
+          <option value="group_head">Grup Head</option>
+        </select>
+      </div>
+
+      <button id="do-register">DAFTAR SEKARANG</button>
+      <button id="close-register">BATAL</button>
+      <p id="reg-msg"></p>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+
+    // Modal Register
+    const modal = document.getElementById('register-modal');
+    const openBtn = document.getElementById('open-register');
+    const closeBtn = document.getElementById('close-register');
+    const doRegisterBtn = document.getElementById('do-register');
+
+    openBtn.onclick = () => { modal.style.display = 'flex'; };
+    closeBtn.onclick = () => { modal.style.display = 'none'; };
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+    // Eye Toggle
+    function bindEyeToggles() {
+      document.querySelectorAll('.pwd-eye').forEach(btn => {
+        btn.setAttribute('aria-pressed', 'false');
+        btn.title = 'Tampilkan';
+
+        btn.addEventListener('click', () => {
+          const targetId = btn.getAttribute('data-target');
+          const input = document.getElementById(targetId);
+          const isOpen = btn.getAttribute('aria-pressed') === 'true';
+
+          btn.setAttribute('aria-pressed', String(!isOpen));
+          btn.title = isOpen ? 'Tampilkan' : 'Sembunyikan';
+          input.type = isOpen ? 'password' : 'text';
+
+          input.focus({ preventScroll: true });
+          try {
+            const len = input.value.length;
+            input.setSelectionRange(len, len);
+          } catch (e) {}
+        });
+      });
+    }
+    bindEyeToggles();
+
+    // Register Action
+    doRegisterBtn.onclick = async () => {
+      const username = document.getElementById('reg-username').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const role     = document.getElementById('reg-role').value;
+      const msg = document.getElementById('reg-msg');
+
+      if (!username || !password) {
+        msg.textContent = 'Username dan password wajib diisi.';
+        msg.style.color = '#F26522';
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ username, password, role })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          msg.textContent = 'Registrasi berhasil. Silakan login.';
+          msg.style.color = '#8BC53F';
+          setTimeout(() => { modal.style.display = 'none'; }, 1200);
+        } else {
+          msg.textContent = data.detail || 'Registrasi gagal';
+          msg.style.color = '#F26522';
+        }
+      } catch (e) {
+        msg.textContent = 'Terjadi kesalahan jaringan.';
+        msg.style.color = '#F26522';
+      }
+    };
+
+    // // Dummy login
+    // document.getElementById('login-form').addEventListener('submit', async (e) => {
+    //   e.preventDefault();
+    //   const nip = document.getElementById('username').value.trim();
+    //   const pass = document.getElementById('password').value;
+
+    //   if (nip && pass) {
+    //     alert('Login dummy sukses (ganti dengan request ke backend).');
+    //   }
+    // });
+  </script>
 </body>
 </html>
