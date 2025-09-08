@@ -1,0 +1,97 @@
+/* Global styles for background and common layout */
+:root {
+  --brand-blue: #0072BC;
+  --brand-orange: #F26522;
+  --brand-green: #8BC53F;
+  --fg: #fff;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--fg);
+}
+
+/* Full-screen background: image + soft gradient overlay */
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(135deg, rgba(0,114,188,0.45), rgba(242,101,34,0.45), rgba(139,197,63,0.45)),
+    url('/static/airport-background.jpg');
+  background-size: cover;
+  background-position: center;
+  filter: saturate(1.05);
+}
+
+/* Page area where content is rendered */
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Add top padding so fixed header doesn't overlap content */
+  padding: 84px 24px 24px 24px;
+}
+@media (max-width: 600px) {
+  .page { padding-top: 120px; }
+}
+
+/* Simple top navigation */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(4px);
+  border-bottom: 1px solid rgba(255,255,255,0.25);
+}
+.topbar-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; max-width: 1100px; margin: 0 auto; color: #fff;
+}
+.topbar .brand { color: #fff; font-weight: 800; text-decoration: none; letter-spacing: 0.5px; }
+.topbar .links a { color:#fff; text-decoration:none; margin: 0 8px; padding: 6px 8px; border-radius: 6px; }
+.topbar .links a:hover { background: rgba(255,255,255,0.18); }
+.topbar .links .sep { display:inline-block; width:1px; height:18px; background: rgba(255,255,255,0.4); margin: 0 6px -4px 6px; }
+.topbar .links .who { opacity: 0.9; margin-right: 6px; }
+
+/* Shared panel/card style used across pages */
+.card {
+  width: min(920px, 95vw);
+  background: linear-gradient(135deg, rgba(0,114,188,0.92), rgba(242,101,34,0.92), rgba(139,197,63,0.92));
+  color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  padding: 20px 22px;
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+.row { margin: 10px 0; }
+label { display: block; margin-bottom: 6px; font-weight: bold; }
+input[type="text"], input[type="password"], input[type="number"], select, textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  color: #222;
+  background: #fff;
+}
+
+.actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.btn, button.btn {
+  background: var(--brand-orange);
+  color: #fff;
+  border: 0;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.btn:hover, button.btn:hover { background: var(--brand-green); }
+
+.status { font-size: 0.95em; }
+.note { color: rgba(255,255,255,0.9); font-size: 0.95em; }
