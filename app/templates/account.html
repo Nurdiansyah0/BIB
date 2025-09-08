@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Akun Saya{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h2>Akun Saya</h2>
+    <div class="row">
+      <div style="flex:1 1 240px; min-width:240px;">
+        <label>Username</label>
+        <input type="text" value="{{ username }}" readonly>
+      </div>
+      <div style="flex:1 1 240px; min-width:240px;">
+        <label>Role</label>
+        <input type="text" value="{{ role }}" readonly>
+      </div>
+    </div>
+    <div class="actions">
+      <a href="/password/change" class="btn">Ganti Password</a>
+    </div>
+  </div>
+{% endblock %}
+

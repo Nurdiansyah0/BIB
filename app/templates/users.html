@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Master Users{% endblock %}
+{% block content %}
+  <div class="card" style="width:min(1100px,95vw)">
+    <h2>Master Users</h2>
+    <div class="row">
+      <div style="flex:2 1 240px;min-width:220px;">
+        <label>Cari</label>
+        <input id="q" type="text" placeholder="Nama, email, departemen">
+      </div>
+      <div style="flex:1 1 200px;min-width:200px;">
+        <label>Role</label>
+        <select id="role">
+          <option value="">(semua)</option>
+          <option>officer</option>
+          <option>squad leader</option>
+          <option>team leader</option>
+          <option>manager</option>
+          <option>grup head</option>
+          <option>administrator</option>
+        </select>
+      </div>
+      <div style="align-self:flex-end;">
+        <button class="btn" id="btnRefresh">Refresh</button>
+      </div>
+    </div>
+
+    <div class="table-scroll" style="margin-top:10px; background:#fff;">
+      <table style="width:100%; border-collapse:collapse; color:#333" id="tbl">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">ID</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Email</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Nama</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Departemen</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Role</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="actions" style="justify-content:space-between; margin-top:8px;">
+      <div>
+        <button class="btn" id="prev">Prev</button>
+        <button class="btn" id="next">Next</button>
+      </div>
+      <span id="status" class="status"></span>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const qEl = document.getElementById('q');
+  const roleEl = document.getElementById('role');
+  const tbody = document.querySelector('#tbl tbody');
+  const statusEl = document.getElementById('status');
+  const limit = 100; let offset = 0;
+  function setStatus(t){ statusEl.textContent = t || ''; if(t) { try{ notify(t, 'info'); }catch(_){} } }
+  async function load(){
+    setStatus('Memuat...');
+    const p = new URLSearchParams();
+    p.set('limit', String(limit));
+    p.set('offset', String(offset));
+    const qv = qEl.value.trim(); if (qv) p.set('q', qv);
+    const rv = roleEl.value.trim(); if (rv) p.set('role', rv);
+    const res = await fetch('/api/dashboard/master-users?' + p.toString());
+    const data = await res.json();
+    if (!res.ok) { const m = (data && data.detail) || 'Gagal memuat'; setStatus(m); try{ notify(m, 'error'); }catch(_){} return; }
+    tbody.innerHTML='';
+    (data||[]).forEach(r => {
+      const tr = document.createElement('tr');
+      function td(t){ const e=document.createElement('td'); e.textContent=t; e.style.padding='8px'; e.style.borderBottom='1px solid #eee'; return e; }
+      tr.appendChild(td(r.id_user));
+      tr.appendChild(td(r.email));
+      tr.appendChild(td(r.nama_lengkap));
+      tr.appendChild(td(r.departemen));
+      tr.appendChild(td(r.role));
+      tbody.appendChild(tr);
+    });
+    setStatus(`Menampilkan ${data.length} data, mulai ${offset}`);
+  }
+  document.getElementById('btnRefresh').addEventListener('click', ()=>{ offset = 0; load(); });
+  document.getElementById('prev').addEventListener('click', ()=>{ offset = Math.max(0, offset - limit); load(); });
+  document.getElementById('next').addEventListener('click', ()=>{ offset = offset + limit; load(); });
+  qEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ offset = 0; load(); }});
+  load();
+</script>
+{% endblock %}

@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+{% block title %}Admin - Manage{% endblock %}
+{% block head_extra %}
+<style>
+  .admin-container { width: min(1280px, 96vw); margin: 0 auto; }
+  .admin-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:16px; align-items:start; }
+  .admin-grid .card { width: 100%; }
+  .admin-grid .card--wide { grid-column: 1 / -1; }
+  .admin-grid .row { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+  .admin-grid .row > div { flex: 1 1 220px; min-width: 220px; }
+  .admin-grid .row input, .admin-grid .row select, .admin-grid .row textarea { width: 100%; min-width: 0; }
+  .status { margin-left: 8px; }
+  .table-scroll { overflow:auto; max-height:45vh; border:1px solid rgba(255,255,255,.25); border-radius:8px; background:#fff; }
+  .admin-container .card { background: rgba(255,255,255,0.92); color:#222; border:1px solid rgba(0,0,0,0.08); }
+  .admin-container .card h2, .admin-container .card h3 { color:#111; }
+  .admin-container .note { color:#333; }
+  @media (max-width: 900px){
+    .admin-grid { grid-template-columns: 1fr; }
+    .admin-grid .row > div { flex-basis: 100%; min-width: 180px; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+  <div class="admin-container">
+  <div class="admin-grid">
+  <div class="card card--wide">
+    <h3>Status Database</h3>
+    <div id="db-status" class="note">Memuat ringkasan...</div>
+  <div class="card">
+    <div class="actions" style="justify-content:flex-end; margin-bottom:6px;">
+      <a class="btn" href="/dashboard">Kembali ke Dashboard</a>
+    </div>
+    <h2>Admin Management</h2>
+    <p class="note">Kelola pengguna dan terminal. Fitur ini khusus Superadmin.</p>
+
+    <div class="row">
+      <button class="btn" id="btnVacuum">Optimize DB (VACUUM)</button>
+      <span id="msg" class="status"></span>
+    </div>
+
+    <hr style="border-color:rgba(255,255,255,.3);margin:12px 0;"/>
+
+    <h3>Users (Auth)</h3>
+    <div class="row">
+      <div>
+        <label>Username</label>
+        <input id="u_username" type="text" placeholder="username"/>
+      </div>
+      <div>
+        <label>Password</label>
+        <input id="u_password" type="password" placeholder="password"/>
+      </div>
+      <div>
+        <label>Role</label>
+        <select id="u_role">
+          <option value="officer">officer</option>
+          <option value="squad_leader">squad_leader</option>
+          <option value="team_leader">team_leader</option>
+          <option value="manager">manager</option>
+          <option value="superadmin">superadmin</option>
+        </select>
+      </div>
+      <button class="btn" id="btnAddUser">Add User</button>
+    </div>
+
+    <div class="table-scroll">
+      <table id="tblUsers" style="width:100%; border-collapse:collapse; background:#fff; color:#333;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">ID</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Username</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Role</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:16px;">Terminals</h3>
+    <div class="row">
+      <div>
+        <label>Nama</label>
+        <input id="t_name" type="text" placeholder="Terminal X"/>
+      </div>
+      <div style="flex:1; min-width:260px;">
+        <label>Form Schema (JSON)</label>
+        <textarea id="t_schema" rows="3" placeholder='{"fields":[{"name":"kebersihan","type":"select","options":["Baik","Buruk"]}]}'></textarea>
+      </div>
+      <button class="btn" id="btnAddTerminal">Add Terminal</button>
+    </div>
+
+    <div class="table-scroll">
+      <table id="tblTerm" style="width:100%; border-collapse:collapse; background:#fff; color:#333;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">ID</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Name</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Lokasi</h3>
+    <div class="row">
+      <div>
+        <label>Nama Lokasi</label>
+        <input id="l_name" type="text" placeholder="Nama lokasi"/>
+      </div>
+      <button class="btn" id="btnAddLokasi">Add Lokasi</button>
+    </div>
+
+    <div class="table-scroll">
+      <table id="tblLok" style="width:100%; border-collapse:collapse; background:#fff; color:#333;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">ID</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Nama</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Lat</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Lon</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Radius (m)</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Area</h3>
+    <div class="row">
+      <div>
+        <label>Pilih Lokasi</label>
+        <select id="a_lokasi"></select>
+      </div>
+      <div>
+        <label>Nama Area</label>
+        <input id="a_name" type="text" placeholder="Nama area"/>
+      </div>
+      <button class="btn" id="btnAddArea">Add Area</button>
+    </div>
+
+    <div class="table-scroll">
+      <table id="tblArea" style="width:100%; border-collapse:collapse; background:#fff; color:#333;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">ID</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Nama</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <h3>Item</h3>
+    <div class="row">
+      <div>
+        <label>Pilih Area</label>
+        <select id="i_area"></select>
+      </div>
+      <div>
+        <label>Nama Item</label>
+        <input id="i_name" type="text" placeholder="Nama item"/>
+      </div>
+      <button class="btn" id="btnAddItem">Add Item</button>
+    </div>
+
+    <div class="table-scroll">
+      <table id="tblItem" style="width:100%; border-collapse:collapse; background:#fff; color:#333;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">ID</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Nama</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Master Pengguna</h3>
+    <div class="row" style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+      <div>
+        <label>Email</label>
+        <input id="m_email" type="email" placeholder="user@example.com"/>
+      </div>
+      <div>
+        <label>Nama Lengkap</label>
+        <input id="m_nama" type="text" placeholder="Nama"/>
+      </div>
+      <div>
+        <label>Departemen</label>
+        <input id="m_dept" type="text" placeholder="Departemen"/>
+      </div>
+      <div>
+        <label>Role</label>
+        <select id="m_role">
+          <option>officer</option>
+          <option>squad leader</option>
+          <option>team leader</option>
+          <option>manager</option>
+          <option>grup head</option>
+          <option>administrator</option>
+        </select>
+      </div>
+      <button class="btn" id="btnAddMasterUser">Add Master User</button>
+    </div>
+
+    <div style="overflow:auto; max-height:300px; border:1px solid rgba(255,255,255,.25); border-radius:8px;">
+      <table id="tblMasterUsers" style="width:100%; border-collapse:collapse; background:#fff; color:#333;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">ID</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Email</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Nama</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Departemen</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Role</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  </div>
+  </div>
+  </div>
+  </div>
+  {% endblock %}
+
+{% block scripts %}
+<script>
+  const msg = document.getElementById('msg');
+  function setMsg(t, ok=false){ msg.textContent = t; msg.style.color = ok ? 'lime' : 'yellow'; }
+  async function jget(u){ const r = await fetch(u); const d = await r.json(); if(!r.ok) throw new Error(d.detail||r.status); return d; }
+  async function jpost(u, body){ const r = await fetch(u,{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); const d = await r.json(); if(!r.ok) throw new Error(d.detail||r.status); return d; }
+  async function jput(u, body){ const r = await fetch(u,{method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); const d = await r.json(); if(!r.ok) throw new Error(d.detail||r.status); return d; }
+  async function jdel(u){ const r = await fetch(u,{method:'DELETE'}); const d = await r.json(); if(!r.ok) throw new Error(d.detail||r.status); return d; }
+
+  // Users
+  const utbody = document.querySelector('#tblUsers tbody');
+  async function loadUsers(){
+    utbody.innerHTML = '';
+    const list = await jget('/api/admin/users');
+    list.forEach(u => {
+      const tr = document.createElement('tr');
+      const tdId = document.createElement('td'); tdId.textContent = u.id; tdId.style.padding='8px'; tdId.style.borderBottom='1px solid #eee';
+      const tdU = document.createElement('td'); tdU.textContent = u.username; tdU.style.padding='8px'; tdU.style.borderBottom='1px solid #eee';
+      const tdR = document.createElement('td');
+      const sel = document.createElement('select'); ['officer','squad_leader','team_leader','manager','group_head','superadmin'].forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; if(u.role===r) o.selected=true; sel.appendChild(o); });
+      sel.addEventListener('change', async ()=>{ try{ await jput(`/api/admin/users/${u.id}`, { role: sel.value }); setMsg('Role updated', true); }catch(e){ setMsg(e.message||e); }});
+      tdR.appendChild(sel); tdR.style.padding='8px'; tdR.style.borderBottom='1px solid #eee';
+      const tdA = document.createElement('td'); tdA.style.padding='8px'; tdA.style.borderBottom='1px solid #eee';
+      const btnPwd = document.createElement('button'); btnPwd.textContent='Reset Pwd'; btnPwd.className='btn'; btnPwd.onclick = async ()=>{ try{ const r = await jpost(`/api/admin/users/${u.id}/reset-password-temp`, {}); const tmp = r.temporary_password; setMsg('Temporary password generated', true); try{ await navigator.clipboard.writeText(tmp); notify('Temporary password disalin ke clipboard', 'success'); }catch(_){ notify('Temporary password: ' + tmp, 'info', 6000); } }catch(e){ setMsg(e.message||e); notify(String(e.message||e), 'error');} };
+      const btnDel = document.createElement('button'); btnDel.textContent='Delete'; btnDel.className='btn'; btnDel.style.background='#b00'; btnDel.onclick = async ()=>{ if(!confirm('Delete user?')) return; try{ await jdel(`/api/admin/users/${u.id}`); loadUsers(); setMsg('User deleted', true);}catch(e){ setMsg(e.message||e);} };
+      tdA.appendChild(btnPwd); tdA.appendChild(document.createTextNode(' ')); tdA.appendChild(btnDel);
+      tr.appendChild(tdId); tr.appendChild(tdU); tr.appendChild(tdR); tr.appendChild(tdA);
+      utbody.appendChild(tr);
+    });
+  }
+  document.getElementById('btnAddUser').onclick = async ()=>{
+    const username = document.getElementById('u_username').value.trim();
+    const password = document.getElementById('u_password').value;
+    const role = document.getElementById('u_role').value;
+    if(!username || !password){ setMsg('Username/password required'); return; }
+    try{ await jpost('/api/admin/users', { username, password, role }); setMsg('User added', true); document.getElementById('u_username').value=''; document.getElementById('u_password').value=''; loadUsers(); }catch(e){ setMsg(e.message||e); }
+  };
+
+  // Terminals
+  const ttbody = document.querySelector('#tblTerm tbody');
+  async function loadTerm(){
+    ttbody.innerHTML = '';
+    const list = await jget('/api/admin/terminals');
+    list.forEach(t => {
+      const tr = document.createElement('tr');
+      const tdId = document.createElement('td'); tdId.textContent = t.id; tdId.style.padding='8px'; tdId.style.borderBottom='1px solid #eee';
+      const tdN = document.createElement('td');
+      const inp = document.createElement('input'); inp.type='text'; inp.value=t.name; inp.style.width='100%'; inp.addEventListener('change', async ()=>{ try{ await jput(`/api/admin/terminals/${t.id}`, { name: inp.value }); setMsg('Terminal updated', true);}catch(e){ setMsg(e.message||e);} });
+      tdN.appendChild(inp); tdN.style.padding='8px'; tdN.style.borderBottom='1px solid #eee';
+      const tdA = document.createElement('td'); tdA.style.padding='8px'; tdA.style.borderBottom='1px solid #eee';
+      const btnDel = document.createElement('button'); btnDel.textContent='Delete'; btnDel.className='btn'; btnDel.style.background='#b00'; btnDel.onclick = async ()=>{ if(!confirm('Delete terminal?')) return; try{ await jdel(`/api/admin/terminals/${t.id}`); setMsg('Terminal deleted', true); loadTerm(); }catch(e){ setMsg(e.message||e);} };
+      tdA.appendChild(btnDel);
+      tr.appendChild(tdId); tr.appendChild(tdN); tr.appendChild(tdA);
+      ttbody.appendChild(tr);
+    });
+  }
+  document.getElementById('btnAddTerminal').onclick = async ()=>{
+    const name = document.getElementById('t_name').value.trim();
+    const schemaText = document.getElementById('t_schema').value.trim();
+    let form_schema = null;
+    if(schemaText){ try{ form_schema = JSON.parse(schemaText); }catch(e){ setMsg('Schema harus JSON valid'); return; } }
+    if(!name){ setMsg('Nama terminal required'); return; }
+    try{ await jpost('/api/admin/terminals', { name, form_schema }); setMsg('Terminal added', true); document.getElementById('t_name').value=''; document.getElementById('t_schema').value=''; loadTerm(); }catch(e){ setMsg(e.message||e); }
+  };
+
+  // DB Maintenance
+  document.getElementById('btnVacuum').onclick = async ()=>{
+    try{ await jpost('/api/admin/db/vacuum', {}); setMsg('DB optimized', true);}catch(e){ setMsg(e.message||e); }
+  };
+
+  // Init
+  loadUsers();
+  loadTerm();
+  // Lokasi
+  const ltbody = document.querySelector('#tblLok tbody');
+  async function loadLok(){
+    ltbody.innerHTML='';
+    try{
+      const list = await jget('/api/lokasi');
+      list.forEach(l => {
+        const tr = document.createElement('tr');
+        const tdId = document.createElement('td'); tdId.textContent = l.id_lokasi; tdId.style.padding='8px'; tdId.style.borderBottom='1px solid #eee';
+        const tdN = document.createElement('td');
+        const inp = document.createElement('input'); inp.type='text'; inp.value=l.nama_lokasi; inp.style.width='160px';
+        inp.addEventListener('change', async ()=>{ try{ await jput(`/api/lokasi/${l.id_lokasi}?nama_lokasi=${encodeURIComponent(inp.value)}`, {}); setMsg('Lokasi updated', true);}catch(e){ setMsg(e.message||e);} });
+        tdN.appendChild(inp); tdN.style.padding='8px'; tdN.style.borderBottom='1px solid #eee';
+        const tdLat = document.createElement('td'); const inLat=document.createElement('input'); inLat.type='number'; inLat.step='any'; inLat.value = l.latitude ?? ''; inLat.style.width='120px'; inLat.addEventListener('change', async()=>{ try{ await jput(`/api/lokasi/${l.id_lokasi}?latitude=${encodeURIComponent(inLat.value)}`, {}); setMsg('Lat saved', true);}catch(e){ setMsg(e.message||e);} }); tdLat.appendChild(inLat); tdLat.style.padding='8px'; tdLat.style.borderBottom='1px solid #eee';
+        const tdLon = document.createElement('td'); const inLon=document.createElement('input'); inLon.type='number'; inLon.step='any'; inLon.value = l.longitude ?? ''; inLon.style.width='120px'; inLon.addEventListener('change', async()=>{ try{ await jput(`/api/lokasi/${l.id_lokasi}?longitude=${encodeURIComponent(inLon.value)}`, {}); setMsg('Lon saved', true);}catch(e){ setMsg(e.message||e);} }); tdLon.appendChild(inLon); tdLon.style.padding='8px'; tdLon.style.borderBottom='1px solid #eee';
+        const tdRad = document.createElement('td'); const inRad=document.createElement('input'); inRad.type='number'; inRad.min='0'; inRad.value = l.radius_m ?? 200; inRad.style.width='100px'; inRad.addEventListener('change', async()=>{ try{ await jput(`/api/lokasi/${l.id_lokasi}?radius_m=${encodeURIComponent(inRad.value)}`, {}); setMsg('Radius saved', true);}catch(e){ setMsg(e.message||e);} }); tdRad.appendChild(inRad); tdRad.style.padding='8px'; tdRad.style.borderBottom='1px solid #eee';
+        const tdA = document.createElement('td'); tdA.style.padding='8px'; tdA.style.borderBottom='1px solid #eee';
+        const btnDel = document.createElement('button'); btnDel.textContent='Delete'; btnDel.className='btn'; btnDel.style.background='#b00'; btnDel.onclick = async ()=>{ if(!confirm('Delete lokasi?')) return; try{ await jdel(`/api/lokasi/${l.id_lokasi}`); setMsg('Lokasi deleted', true); loadLok(); }catch(e){ setMsg(e.message||e);} };
+        tdA.appendChild(btnDel);
+        tr.appendChild(tdId); tr.appendChild(tdN); tr.appendChild(tdLat); tr.appendChild(tdLon); tr.appendChild(tdRad); tr.appendChild(tdA);
+        ltbody.appendChild(tr);
+      })
+    }catch(e){ /* ignore */ }
+  }
+  document.getElementById('btnAddLokasi').onclick = async ()=>{
+    const name = document.getElementById('l_name').value.trim();
+    if(!name){ setMsg('Nama lokasi required'); return; }
+    try{ await jpost(`/api/lokasi?nama_lokasi=${encodeURIComponent(name)}`, {}); setMsg('Lokasi added', true); document.getElementById('l_name').value=''; loadLok(); }catch(e){ setMsg(e.message||e); }
+  };
+  loadLok();
+  // Populate lokasi selects for Areas management
+  const selALok = document.getElementById('a_lokasi');
+  async function refreshLokasiSelect(){
+    try{
+      const list = await jget('/api/lokasi');
+      function fill(sel){ sel.innerHTML=''; list.forEach(l=>{ const o=document.createElement('option'); o.value=l.id_lokasi; o.textContent=`${l.nama_lokasi} (#${l.id_lokasi})`; sel.appendChild(o); }); }
+      fill(selALok);
+    }catch(e){ /* ignore */ }
+  }
+  refreshLokasiSelect();
+
+  // Area management
+  const atbody = document.querySelector('#tblArea tbody');
+  async function loadArea(){
+    atbody.innerHTML='';
+    const lid = selALok.value; if(!lid) return;
+    try{
+      const list = await jget(`/api/admin/areas?lokasi_id=${encodeURIComponent(lid)}`);
+      list.forEach(a=>{
+        const tr=document.createElement('tr');
+        const tdId=document.createElement('td'); tdId.textContent=a.id_area; tdId.style.padding='8px'; tdId.style.borderBottom='1px solid #eee';
+        const tdN=document.createElement('td'); const inp=document.createElement('input'); inp.type='text'; inp.value=a.nama_area; inp.style.width='100%'; inp.addEventListener('change', async ()=>{ try{ await jput(`/api/admin/areas/${a.id_area}?nama_area=${encodeURIComponent(inp.value)}`, {}); setMsg('Area updated', true);}catch(e){ setMsg(e.message||e);} }); tdN.appendChild(inp); tdN.style.padding='8px'; tdN.style.borderBottom='1px solid #eee';
+        const tdA=document.createElement('td'); tdA.style.padding='8px'; tdA.style.borderBottom='1px solid #eee'; const btnDel=document.createElement('button'); btnDel.textContent='Delete'; btnDel.className='btn'; btnDel.style.background='#b00'; btnDel.onclick=async()=>{ if(!confirm('Delete area?'))return; try{ await jdel(`/api/admin/areas/${a.id_area}`); setMsg('Area deleted', true); loadArea(); refreshItemsAreaSelect(); }catch(e){ setMsg(e.message||e);} }; tdA.appendChild(btnDel);
+        tr.appendChild(tdId); tr.appendChild(tdN); tr.appendChild(tdA); atbody.appendChild(tr);
+      })
+    }catch(e){ /* ignore */ }
+  }
+  selALok.addEventListener('change', ()=>{ loadArea(); refreshItemsAreaSelect(); });
+  document.getElementById('btnAddArea').onclick = async ()=>{
+    const lid = selALok.value; const name = document.getElementById('a_name').value.trim(); if(!lid||!name){ setMsg('Pilih lokasi dan isi nama area'); return; }
+    try{ await jpost(`/api/admin/areas?lokasi_id=${encodeURIComponent(lid)}&nama_area=${encodeURIComponent(name)}`, {}); setMsg('Area added', true); document.getElementById('a_name').value=''; loadArea(); refreshItemsAreaSelect(); }catch(e){ setMsg(e.message||e); }
+  };
+  loadArea();
+
+  // Item management
+  const selIArea = document.getElementById('i_area');
+  const itbody = document.querySelector('#tblItem tbody');
+  async function refreshItemsAreaSelect(){
+    const lid = selALok.value || '';
+    if(!lid){ selIArea.innerHTML=''; itbody.innerHTML=''; return; }
+    try{
+      const areas = await jget(`/api/lokasi/${encodeURIComponent(lid)}/areas`);
+      selIArea.innerHTML='';
+      areas.forEach(a=>{ const o=document.createElement('option'); o.value=a.id_area; o.textContent=`${a.nama_area} (#${a.id_area})`; selIArea.appendChild(o); });
+      loadItems();
+    }catch(e){ /* ignore */ }
+  }
+  async function loadItems(){
+    itbody.innerHTML=''; const aid = selIArea.value; if(!aid) return;
+    try{
+      const list = await jget(`/api/admin/items?area_id=${encodeURIComponent(aid)}`);
+      list.forEach(it=>{
+        const tr=document.createElement('tr');
+        const tdId=document.createElement('td'); tdId.textContent=it.id_item; tdId.style.padding='8px'; tdId.style.borderBottom='1px solid #eee';
+        const tdN=document.createElement('td'); const inp=document.createElement('input'); inp.type='text'; inp.value=it.nama_item; inp.style.width='100%'; inp.addEventListener('change', async ()=>{ try{ await jput(`/api/admin/items/${it.id_item}?nama_item=${encodeURIComponent(inp.value)}`, {}); setMsg('Item updated', true);}catch(e){ setMsg(e.message||e);} }); tdN.appendChild(inp); tdN.style.padding='8px'; tdN.style.borderBottom='1px solid #eee';
+        const tdA=document.createElement('td'); tdA.style.padding='8px'; tdA.style.borderBottom='1px solid #eee'; const btnDel=document.createElement('button'); btnDel.textContent='Delete'; btnDel.className='btn'; btnDel.style.background='#b00'; btnDel.onclick=async()=>{ if(!confirm('Delete item?'))return; try{ await jdel(`/api/admin/items/${it.id_item}`); setMsg('Item deleted', true); loadItems(); }catch(e){ setMsg(e.message||e);} }; tdA.appendChild(btnDel);
+        tr.appendChild(tdId); tr.appendChild(tdN); tr.appendChild(tdA); itbody.appendChild(tr);
+      })
+    }catch(e){ /* ignore */ }
+  }
+  selIArea.addEventListener('change', loadItems);
+  document.getElementById('btnAddItem').onclick = async ()=>{
+    const aid = selIArea.value; const name = document.getElementById('i_name').value.trim(); if(!aid||!name){ setMsg('Pilih area dan isi nama item'); return; }
+    try{ await jpost(`/api/admin/items?area_id=${encodeURIComponent(aid)}&nama_item=${encodeURIComponent(name)}`, {}); setMsg('Item added', true); document.getElementById('i_name').value=''; loadItems(); }catch(e){ setMsg(e.message||e); }
+  };
+  refreshItemsAreaSelect();
+
+  // Master Users
+  const mutbody = document.querySelector('#tblMasterUsers tbody');
+  async function loadMasterUsers(){
+    mutbody.innerHTML='';
+    try{
+      const list = await jget('/api/admin/master-users');
+      list.forEach(u=>{
+        const tr = document.createElement('tr');
+        const tdId = document.createElement('td'); tdId.textContent = u.id_user; tdId.style.padding='8px'; tdId.style.borderBottom='1px solid #eee';
+        const tdE = document.createElement('td');
+        const inpE = document.createElement('input'); inpE.type='email'; inpE.value=u.email; inpE.style.width='100%';
+        const tdN = document.createElement('td');
+        const inpN = document.createElement('input'); inpN.type='text'; inpN.value=u.nama_lengkap; inpN.style.width='100%';
+        const tdD = document.createElement('td');
+        const inpD = document.createElement('input'); inpD.type='text'; inpD.value=u.departemen; inpD.style.width='100%';
+        const tdR = document.createElement('td');
+        const selR = document.createElement('select'); ['officer','squad leader','team leader','manager','grup head','administrator'].forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; if(u.role===r) o.selected=true; selR.appendChild(o); });
+        const tdA = document.createElement('td');
+        const btnSave = document.createElement('button'); btnSave.textContent='Save'; btnSave.className='btn'; btnSave.onclick = async ()=>{
+          try{
+            await jput(`/api/admin/master-users/${u.id_user}`, { email: inpE.value, nama_lengkap: inpN.value, departemen: inpD.value, role: selR.value });
+            setMsg('Master user updated', true);
+          }catch(e){ setMsg(e.message||e); }
+        };
+        const btnDel = document.createElement('button'); btnDel.textContent='Delete'; btnDel.className='btn'; btnDel.style.background='#b00'; btnDel.onclick = async ()=>{
+          if(!confirm('Delete master user?')) return;
+          try{ await jdel(`/api/admin/master-users/${u.id_user}`); setMsg('Master user deleted', true); loadMasterUsers(); }catch(e){ setMsg(e.message||e); }
+        };
+        tdE.appendChild(inpE); tdN.appendChild(inpN); tdD.appendChild(inpD); tdR.appendChild(selR);
+        tdA.appendChild(btnSave); tdA.appendChild(document.createTextNode(' ')); tdA.appendChild(btnDel);
+        [tdId, tdE, tdN, tdD, tdR, tdA].forEach(td=>{ td.style.padding='8px'; td.style.borderBottom='1px solid #eee'; });
+        tr.appendChild(tdId); tr.appendChild(tdE); tr.appendChild(tdN); tr.appendChild(tdD); tr.appendChild(tdR); tr.appendChild(tdA);
+        mutbody.appendChild(tr);
+      })
+    }catch(e){ /* ignore */ }
+  }
+  document.getElementById('btnAddMasterUser').onclick = async ()=>{
+    const email = document.getElementById('m_email').value.trim();
+    const nama = document.getElementById('m_nama').value.trim();
+    const dept = document.getElementById('m_dept').value.trim();
+    const role = document.getElementById('m_role').value;
+    if(!email || !nama || !dept){ setMsg('Lengkapi data master user'); return; }
+    try{ await jpost('/api/admin/master-users', { email, nama_lengkap: nama, departemen: dept, role }); setMsg('Master user added', true); document.getElementById('m_email').value=''; document.getElementById('m_nama').value=''; document.getElementById('m_dept').value=''; loadMasterUsers(); }catch(e){ setMsg(e.message||e); }
+  };
+  loadMasterUsers();
+
+  // DB Summary
+  async function loadDbSummary(){
+    try{
+      const d = await jget('/api/admin/db-summary');
+      const c = d.counts || {};
+      document.getElementById('db-status').textContent = `Users(auth): ${c.users_auth}, Master Users: ${c.master_users}, Terminals: ${c.terminals}, Lokasi: ${c.lokasi}, Area: ${c.area}, Item: ${c.item}, Inspections(legacy): ${c.inspections_legacy}, Inspeksi(normalized): ${c.inspeksi}`;
+    }catch(e){ document.getElementById('db-status').textContent = 'Gagal memuat ringkasan database.'; }
+  }
+  loadDbSummary();
+</script>
+{% endblock %}

@@ -22,9 +22,19 @@ def decode_token(token: str) -> dict:
     except JWTError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token tidak valid") from e
 
+def _wants_json(request: Request) -> bool:
+    accept = (request.headers.get("accept") or "").lower()
+    # Treat API paths or explicit JSON accept as JSON requests.
+    # Do not treat "*/*" as JSON to allow HTML pages to redirect properly.
+    return request.url.path.startswith("/api") or "application/json" in accept
+
+
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> models.User:
     token_cookie = request.cookies.get("access_token")
     if not token_cookie:
+        # For API requests, return 401 JSON instead of redirect
+        if _wants_json(request):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
         raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, detail="Silakan login terlebih dahulu")
     parts = token_cookie.split(" ", 1)
     if len(parts) != 2 or parts[0].lower() != "bearer":
@@ -43,4 +53,29 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> models.
 def require_superadmin(user: models.User = Depends(get_current_user)) -> models.User:
     if user.role != "superadmin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden (superadmin only)")
+    return user
+
+
+def _normalize_role(name: str) -> str:
+    if not name:
+        return ""
+    n = name.strip().lower().replace("_", " ")
+    # Map synonyms to canonical
+    if n in {"superadmin", "super admin", "administrator", "admin"}:
+        return "administrator"
+    if n in {"team leader", "teamleader"}:
+        return "team leader"
+    if n in {"group head", "grup head", "grouphead", "gruphead"}:
+        return "group head"
+    if n in {"squad leader", "squad_leader"}:
+        return "squad leader"
+    return n
+
+
+def require_dashboard_access(user: models.User = Depends(get_current_user)) -> models.User:
+    # Only allow team leader, manager, group head, administrator
+    allowed = {"team leader", "manager", "group head", "administrator"}
+    role = _normalize_role(user.role)
+    if role not in allowed:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Akses dashboard dibatasi")
     return user

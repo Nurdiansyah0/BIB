@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Daftar Inspeksi{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2>Daftar Inspeksi</h2>
+    <div class="row">
+      <label for="filterTerminal">Filter Terminal</label>
+      <select id="filterTerminal" style="max-width:360px;"></select>
+    </div>
+    <div style="overflow:auto; max-height:60vh; border:1px solid rgba(255,255,255,.25); border-radius:8px;">
+      <table id="tbl" style="width:100%; border-collapse:collapse; background:#fff; color:#333;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">ID</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Terminal</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Inspector</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #ccc;">Data</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const ddl = document.getElementById('filterTerminal');
+  const tbody = document.querySelector('#tbl tbody');
+
+  function renderRows(items){
+    tbody.innerHTML = '';
+    (items || []).forEach((it) => {
+      const tr = document.createElement('tr');
+      const tdId = document.createElement('td'); tdId.textContent = it.id; tdId.style.padding='8px'; tdId.style.borderBottom='1px solid #eee';
+      const tdT = document.createElement('td'); tdT.textContent = `${it.terminal_name || ''} (#${it.terminal_id})`; tdT.style.padding='8px'; tdT.style.borderBottom='1px solid #eee';
+      const tdI = document.createElement('td'); tdI.textContent = `${it.inspector_username || ''} (#${it.inspector_id})`; tdI.style.padding='8px'; tdI.style.borderBottom='1px solid #eee';
+      const tdD = document.createElement('td'); tdD.textContent = JSON.stringify(it.data); tdD.style.padding='8px'; tdD.style.borderBottom='1px solid #eee';
+      tr.appendChild(tdId); tr.appendChild(tdT); tr.appendChild(tdI); tr.appendChild(tdD);
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function fetchJSON(url){
+    const res = await fetch(url);
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.detail || `${res.status}`);
+    return data;
+  }
+
+  async function loadTerminals(){
+    ddl.innerHTML = '<option value="">Semua Terminal</option>';
+    try{
+      const list = await fetchJSON('/api/terminals');
+      (list || []).forEach((t)=>{
+        const o = document.createElement('option'); o.value = t.id; o.textContent = t.name; ddl.appendChild(o);
+      })
+    }catch(e){ console.warn('terminals', e); }
+  }
+
+  async function loadInspections(){
+    const tid = ddl.value;
+    const url = tid ? `/api/inspections?terminal_id=${encodeURIComponent(tid)}` : '/api/inspections';
+    try{
+      const list = await fetchJSON(url);
+      renderRows(list);
+    }catch(e){ console.warn('inspections', e); }
+  }
+
+  ddl.addEventListener('change', loadInspections);
+  loadTerminals().then(loadInspections);
+</script>
+{% endblock %}
+

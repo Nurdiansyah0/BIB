@@ -3,6 +3,9 @@
 
 {% block content %}
 <div class="card">
+  <div class="actions" style="justify-content:flex-end; margin-bottom:6px;">
+    <a class="btn" href="/dashboard">Kembali ke Dashboard</a>
+  </div>
   <h2>Import Database (Superuser)</h2>
   <p class="note">Unggah file <strong>.xlsx</strong> atau <strong>.csv</strong> untuk preview, lalu commit ke database.</p>
 
@@ -23,6 +26,21 @@
         <option value="create_or_update">Buat baru / perbarui</option>
         <option value="update_only">Hanya perbarui</option>
       </select>
+    </div>
+
+    <div class="row">
+      <label>Relasi (opsional)</label>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+        <div>
+          <div style="font-size:12px;opacity:.9;">Default Inspector</div>
+          <select id="default_inspector" style="min-width:220px;"></select>
+        </div>
+        <div>
+          <div style="font-size:12px;opacity:.9;">Kolom Username Inspector</div>
+          <input type="text" id="inspector_username_col" placeholder="mis. inspector_username" style="min-width:220px;" />
+        </div>
+      </div>
+      <div class="note">Jika diisi, setiap baris akan mencoba mencari user dari kolom tersebut. Jika tidak ditemukan, akan menggunakan Default Inspector.</div>
     </div>
 
     <div class="row">
@@ -66,12 +84,45 @@ const previewWrap = document.getElementById('previewWrap');
 const previewTable = document.getElementById('previewTable');
 const schemaBox = document.getElementById('schemaBox');
 const fileInfo = document.getElementById('fileInfo');
+const uploadBtn = form.querySelector('button[type="submit"]');
+const commitBtn = document.getElementById('commitBtn');
+const defaultInspector = document.getElementById('default_inspector');
+
+async function loadInspectors(){
+  defaultInspector.innerHTML = '<option value="">(pakai akun saya)</option>';
+  try{
+    const res = await fetch('/api/admin/users');
+    const list = await res.json();
+    if(Array.isArray(list)){
+      list.forEach(u=>{
+        const o = document.createElement('option');
+        o.value = u.id; o.textContent = `${u.username} (#${u.id})`;
+        defaultInspector.appendChild(o);
+      });
+    }
+  }catch(e){ /* ignore */ }
+}
 
 let IMPORT_TOKEN = null;
 
 function setStatus(msg, ok=false){
   statusEl.style.color = ok ? 'lime' : 'yellow';
   statusEl.textContent = msg;
+  try { notify(msg, ok ? 'success' : 'warn'); } catch(_) {}
+}
+
+function canAccept(filename){
+  const allowed = ['.csv','.xlsx','.xls'];
+  const ext = (filename||'').toLowerCase().slice(((filename||'').lastIndexOf('.')));
+  return allowed.includes(ext);
+}
+
+async function fetchSmart(url, opts){
+  const res = await fetch(url, opts);
+  let data = null;
+  try { data = await res.json(); } catch(_) { data = { detail: await res.text().catch(()=>String(res.status)) }; }
+  if(!res.ok){ throw new Error(data && (data.detail || data.message || String(res.status))); }
+  return data;
 }
 
 function renderTable(columns, rows){
@@ -105,16 +156,18 @@ function renderTable(columns, rows){
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
+  const fileEl = document.getElementById('file');
+  const f = fileEl.files && fileEl.files[0];
+  if(!f){ setStatus('Pilih file terlebih dahulu.'); return; }
+  if(!canAccept(f.name)) { setStatus('Format tidak didukung. Gunakan .csv atau .xlsx/.xls'); return; }
   setStatus('Mengunggah & memproses file...');
   previewWrap.style.display = 'none';
   IMPORT_TOKEN = null;
 
+  uploadBtn.disabled = true; commitBtn.disabled = true;
   const fd = new FormData(form);
-  const insertRows = document.getElementById('insert_rows').checked; // hanya untuk commit nanti
   try {
-    const res = await fetch('/api/admin/import-xlsx', { method: 'POST', body: fd });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.detail || 'Gagal memproses file');
+    const data = await fetchSmart('/api/admin/import-xlsx', { method: 'POST', body: fd });
 
     IMPORT_TOKEN = data.token;
     setStatus('Preview siap.', true);
@@ -125,6 +178,8 @@ form.addEventListener('submit', async (e) => {
     previewWrap.style.display = 'block';
   } catch (err) {
     setStatus(String(err.message || err), false);
+  } finally {
+    uploadBtn.disabled = false; commitBtn.disabled = false;
   }
 });
 
@@ -140,15 +195,23 @@ document.getElementById('commitBtn').addEventListener('click', async () => {
   fd.append('terminal_name', terminal_name);
   fd.append('mode', mode);
   fd.append('insert_rows', insert_rows ? 'true' : 'false');
+  const defInsp = defaultInspector.value;
+  if(defInsp) fd.append('default_inspector_id', defInsp);
+  const inspCol = document.getElementById('inspector_username_col').value.trim();
+  if(inspCol) fd.append('inspector_username_col', inspCol);
 
   try {
-    const res = await fetch('/api/admin/commit-import', { method:'POST', body: fd });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.detail || 'Gagal menyimpan');
+    commitBtn.disabled = true; uploadBtn.disabled = true;
+    const data = await fetchSmart('/api/admin/commit-import', { method:'POST', body: fd });
     setStatus(`Berhasil: terminal_id=${data.terminal_id}, inserted_rows=${data.inserted_rows}`, true);
   } catch (err) {
     setStatus(String(err.message || err), false);
+  } finally {
+    commitBtn.disabled = false; uploadBtn.disabled = false;
   }
 });
+
+// Initial loads
+loadInspectors();
 </script>
 {% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Terjadi Kesalahan{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2>Terjadi Kesalahan</h2>
+    <p class="note">{{ error or 'Permintaan tidak dapat diproses.' }}</p>
+    <div class="actions">
+      <a class="btn" href="/">Kembali ke Halaman Utama</a>
+    </div>
+  </div>
+{% endblock %}

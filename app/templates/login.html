@@ -1,105 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login - Bandara Internasional Hang Nadim</title>
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background-color: #f0f8ff;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background-image: url('/static/airport-background.png');
-      background-size: cover;
-      background-position: center;
-    }
-    .login-container {
-      background: linear-gradient(135deg,
-        rgba(0,114,188,0.9),
-        rgba(242,101,34,0.9),
-        rgba(139,197,63,0.9)
-      );
-      border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-      padding: 30px;
-      width: 350px;
-      text-align: center;
-      color: #fff;
-    }
-    .logo { margin-bottom: 25px; }
-    .logo img { max-width: 200px; height: auto; }
+{% extends "base.html" %}
+{% block title %}Login - Bandara Internasional Hang Nadim{% endblock %}
 
-    h2 { color:#fff; margin-bottom:20px; }
-    .input-group { margin-bottom:20px; text-align:left; }
-    label { display:block; margin-bottom:5px; color:#fff; font-weight:bold; }
-    input, select {
-      width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;
-    }
-    button {
-      background-color:#F26522; color:#fff;
-      border:none; padding:12px 20px; border-radius:5px; cursor:pointer;
-      width:100%; font-size:16px; font-weight:bold; transition:background-color .3s;
-    }
-    button:hover { background-color:#8BC53F; }
+{% block head_extra %}
+<style>
+  .login-container {
+    background: linear-gradient(135deg,
+      rgba(0,114,188,0.92),
+      rgba(242,101,34,0.92),
+      rgba(139,197,63,0.92)
+    );
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    padding: 30px;
+    width: 350px;
+    text-align: center;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+  .logo { margin-bottom: 25px; }
+  .logo img { max-width: 200px; height: auto; }
+  h2 { color:#fff; margin-bottom:20px; }
+  .input-group { margin-bottom:20px; text-align:left; }
+  label { display:block; margin-bottom:5px; color:#fff; font-weight:bold; }
+  input, select {
+    width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;
+  }
+  button {
+    background-color:#F26522; color:#fff;
+    border:none; padding:12px 20px; border-radius:5px; cursor:pointer;
+    width:100%; font-size:16px; font-weight:bold; transition:background-color .3s;
+  }
+  button:hover { background-color:#8BC53F; }
+  .footer { margin-top:20px; font-size:12px; color:#eee; }
+  .pwd-wrap { position:relative; }
+  .pwd-wrap input { padding-right:42px; }
+  .pwd-eye {
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    background:transparent; border:0; cursor:pointer; padding:4px;
+    width:auto; line-height:0; color:#444;
+  }
+  .pwd-eye svg { display:block; }
+  .forgot-link { display:inline-block; margin-top:6px; font-size:12px; color:#fff; text-decoration:underline; }
+  #register-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); align-items:center; justify-content:center; z-index:9999; }
+  #register-modal .box { background:#fff; color:#333; padding:20px; border-radius:8px; width:320px; box-shadow:0 8px 24px rgba(0,0,0,.2); }
+  #register-modal .box h3 { margin-top:0; }
+  #register-modal .box .input-group label { color:#333; }
+  #register-modal .box input, #register-modal .box select { width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box; }
+  #do-register { background:#F26522; color:#fff; margin-top:10px; }
+  #close-register { margin-top:8px; width:100%; }
+  #reg-msg { font-size:12px; color:#0072BC; }
+  .pwd-eye .icon-open { display:none; }
+  .pwd-eye[aria-pressed="true"] .icon-closed { display:none; }
+  .pwd-eye[aria-pressed="true"] .icon-open { display:inline; }
+  .pwd-eye .icon-open .eyelid { transform-origin: 50% 50%; transform: scaleY(1); transition: transform .22s ease; }
+  .pwd-eye[aria-pressed="true"] .icon-open .eyelid { transform: scaleY(0); }
+  .pwd-eye svg { transition: opacity .18s ease; }
+</style>
+{% endblock %}
 
-    .footer { margin-top:20px; font-size:12px; color:#eee; }
-
-    /* Eye button */
-    .pwd-wrap { position:relative; }
-    .pwd-wrap input { padding-right:42px; }
-    .pwd-eye {
-      position:absolute; right:8px; top:50%; transform:translateY(-50%);
-      background:transparent; border:0; cursor:pointer; padding:4px;
-      width:auto; line-height:0; color:#444;
-    }
-    .pwd-eye svg { display:block; }
-
-    .forgot-link {
-      display:inline-block; margin-top:6px; font-size:12px; color:#fff; text-decoration:underline;
-    }
-
-    /* Modal register */
-    #register-modal {
-      display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
-      align-items:center; justify-content:center; z-index:9999;
-    }
-    #register-modal .box {
-      background:#fff; color:#333; padding:20px; border-radius:8px; width:320px;
-      box-shadow:0 8px 24px rgba(0,0,0,.2);
-    }
-    #register-modal .box h3 { margin-top:0; }
-    #register-modal .box .input-group label { color:#333; }
-    #register-modal .box input, #register-modal .box select {
-      width:100%; padding:10px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;
-    }
-    #do-register { background:#F26522; color:#fff; margin-top:10px; }
-    #close-register { margin-top:8px; width:100%; }
-    #reg-msg { font-size:12px; color:#0072BC; }
-
-    /* Eye toggle state */
-    .pwd-eye .icon-open { display:none; }
-    .pwd-eye[aria-pressed="true"] .icon-closed { display:none; }
-    .pwd-eye[aria-pressed="true"] .icon-open { display:inline; }
-
-    /* Animasi kelopak */
-    .pwd-eye .icon-open .eyelid {
-      transform-origin: 50% 50%;
-      transform: scaleY(1);
-      transition: transform .22s ease;
-    }
-    .pwd-eye[aria-pressed="true"] .icon-open .eyelid {
-      transform: scaleY(0);
-    }
-
-    .pwd-eye svg { transition: opacity .18s ease; }
-  </style>
-</head>
-<body>
+{% block content %}
   <div class="login-container">
     <div class="logo">
       <img src="/static/logo-hangnadim.webp" alt="Bandara Internasional Hang Nadim">
@@ -158,6 +117,11 @@
       </div>
 
       <div class="input-group">
+        <label for="reg-email">Email</label>
+        <input type="email" id="reg-email" required autocomplete="email" placeholder="user@example.com"/>
+      </div>
+
+      <div class="input-group">
         <label for="reg-password">Password</label>
         <div class="pwd-wrap">
           <input type="password" id="reg-password" required autocomplete="new-password"/>
@@ -181,16 +145,7 @@
         </div>
       </div>
 
-      <div class="input-group">
-        <label for="reg-role">Role</label>
-        <select id="reg-role">
-          <option value="officer">Officer</option>
-          <option value="squad_leader">Squad Leader</option>
-          <option value="team_leader">Team Leader</option>
-          <option value="manager">Manager</option>
-          <option value="group_head">Grup Head</option>
-        </select>
-      </div>
+      
 
       <button id="do-register">DAFTAR SEKARANG</button>
       <button id="close-register">BATAL</button>
@@ -198,7 +153,10 @@
     </div>
   </div>
 
-  <script>
+{% endblock %}
+
+{% block scripts %}
+<script>
     const API_BASE = '/api';
 
     // Modal Register
@@ -239,33 +197,34 @@
     // Register Action
     doRegisterBtn.onclick = async () => {
       const username = document.getElementById('reg-username').value.trim();
+      const email    = document.getElementById('reg-email').value.trim();
       const password = document.getElementById('reg-password').value;
-      const role     = document.getElementById('reg-role').value;
-      const msg = document.getElementById('reg-msg');
+      const msg      = document.getElementById('reg-msg');
 
-      if (!username || !password) {
-        msg.textContent = 'Username dan password wajib diisi.';
-        msg.style.color = '#F26522';
+      function setMsg(t, ok=false){ msg.textContent=t; msg.style.color = ok ? '#8BC53F' : '#F26522'; }
+      const emailOk = /.+@.+\..+/.test(email);
+      if (!username || !password || !emailOk) {
+        setMsg('Lengkapi data: username, email valid, password.');
         return;
       }
       try {
+        doRegisterBtn.disabled = true;
         const res = await fetch(`${API_BASE}/register`, {
           method: 'POST',
           headers: { 'Content-Type':'application/json' },
-          body: JSON.stringify({ username, password, role })
+          body: JSON.stringify({ username, email, password })
         });
-        const data = await res.json();
+        const data = await res.json().catch(()=>({}));
         if (res.ok) {
-          msg.textContent = 'Registrasi berhasil. Silakan login.';
-          msg.style.color = '#8BC53F';
+          setMsg('Registrasi berhasil. Silakan login.', true);
           setTimeout(() => { modal.style.display = 'none'; }, 1200);
         } else {
-          msg.textContent = data.detail || 'Registrasi gagal';
-          msg.style.color = '#F26522';
+          setMsg(data.detail || 'Registrasi gagal');
         }
       } catch (e) {
-        msg.textContent = 'Terjadi kesalahan jaringan.';
-        msg.style.color = '#F26522';
+        setMsg('Terjadi kesalahan jaringan.');
+      } finally {
+        doRegisterBtn.disabled = false;
       }
     };
 
@@ -280,5 +239,4 @@
     //   }
     // });
   </script>
-</body>
-</html>
+{% endblock %}
